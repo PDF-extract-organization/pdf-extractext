@@ -1,0 +1,3 @@
+# Toda revisión de un pull request la aprueba la dueña del repositorio.
+# La regla protect-main-develop exige la aprobación de un code owner en main y develop.
+* @aratx1
