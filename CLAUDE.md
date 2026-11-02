@@ -6,7 +6,8 @@ Guía para sesiones de Claude Code en este repositorio y en los de los servicios
 
 `pdf-extractext` sube un PDF, extrae su texto y genera un resumen con IA en la nube
 (OpenRouter); el resumen se guarda en MongoDB, se muestra en la interfaz y se descarga
-como `.docx`.
+como `.docx`. La configuración del servidor vive en Consul, y cada usuario puede elegir
+modelo, API key y máximo de tokens desde la página Ajustes (en su navegador).
 
 El proyecto está dividido en microservicios, cada uno en su repositorio de la
 organización `PDF-extract-organization`. **Este repositorio no tiene código**: es la
@@ -20,7 +21,8 @@ portada, con la documentación general (`README.md`, `docs/`), la épica de la m
 | `pdf-extractext-summarizer` | Texto → resumen con OpenRouter |
 | `pdf-extractext-summaries` | Historial en MongoDB |
 | `pdf-extractext-exporter` | Markdown → `.docx` |
-| `pdf-extractext-orchestration` | `docker-compose` con Traefik y pruebas e2e |
+| `pdf-extractext-config` | CRUD sobre el KV de Consul (`py-consul`) |
+| `pdf-extractext-orchestration` | `docker-compose` con Traefik y Consul, y pruebas e2e |
 
 La arquitectura completa está en `docs/estructura.md`.
 
@@ -33,11 +35,11 @@ Nunca borrar ni mover la etiqueta.
 
 ### Trabajar en los servicios
 
-Los seis repos se clonan como carpetas hermanas de este. Para levantar y probar el
+Los siete repos se clonan como carpetas hermanas de este. Para levantar y probar el
 stack completo, desde `pdf-extractext-orchestration/`:
 
 ```bash
-cp .env.example .env    # MONGO_ROOT_PASSWORD obligatoria; OPENROUTER_API_KEY opcional
+cp .env.example .env    # MONGO_ROOT_PASSWORD obligatoria; OPENROUTER_API_KEY opcional (también desde Ajustes)
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build --wait
 uv run pytest -rs       # pruebas e2e, todas entrando por Traefik (http://pdf.localhost)
 ```
@@ -54,6 +56,8 @@ Todos los servicios siguen la misma estructura y las mismas reglas:
 - `uv sync --group dev` y `uv run pytest`: sin red, sin base de datos y sin API key.
   Lo que necesita servicios reales se marca `@pytest.mark.integration` y se salta solo.
 - TDD: un commit con los tests en rojo y otro con la implementación en verde.
+- Los valores de cada resumen se resuelven: ajustes del usuario → Consul (vía `config`)
+  → `.env` de `summarizer`. Nunca guardar API keys en Consul ni en el servidor.
 
 ### Convenciones
 
